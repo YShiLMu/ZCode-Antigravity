@@ -629,6 +629,51 @@ func TestConfigureZCodeRefusesUnmanagedProviderCollision(t *testing.T) {
 	}
 }
 
+func TestConfigureZCodeWorksWithoutLegacyConfig(t *testing.T) {
+	a := testApp(t)
+	if err := os.MkdirAll(filepath.Dir(a.paths.ZCodeConfig), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	backup, changed, err := a.configureZCode(18081, requiredTestModels())
+	if err != nil || !changed {
+		t.Fatalf("sync without legacy config: changed=%v err=%v", changed, err)
+	}
+	if backup != "" {
+		t.Fatalf("unexpected backup %q for missing config.json", backup)
+	}
+	if _, err := os.Stat(a.paths.ZCodeConfig); !os.IsNotExist(err) {
+		t.Fatal("legacy config.json must not be created")
+	}
+	configured, _, err := zcodeProviderStatus(a.paths.ZCodeConfig)
+	if err != nil || configured {
+		t.Fatalf("legacy status = configured=%v err=%v", configured, err)
+	}
+	personalPath := filepath.Join(filepath.Dir(a.paths.ZCodeConfig), "provider_config.json")
+	_, root, err := readJSONObject(personalPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	config := root["config"].(map[string]any)
+	selection := config["defaultModelSelection"].(map[string]any)
+	if selection["modelId"] != "gemini-3.8-flash" {
+		t.Fatalf("wrong default: %v", selection)
+	}
+	if err := a.removeZCodeProvider(); err != nil {
+		t.Fatal(err)
+	}
+	_, root, err = readJSONObject(personalPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	config = root["config"].(map[string]any)
+	if rules := config["providerConfigRules"].(map[string]any)["providerRules"].([]any); len(rules) != 0 {
+		t.Fatalf("managed provider rules remain: %v", rules)
+	}
+	if _, ok := config["defaultModelSelection"]; ok {
+		t.Fatal("defaultModelSelection should be removed with the provider")
+	}
+}
+
 func TestRemoveProviderOnlyRemovesOwnedEntry(t *testing.T) {
 	a := testApp(t)
 	if err := os.MkdirAll(filepath.Dir(a.paths.ZCodeConfig), 0o700); err != nil {

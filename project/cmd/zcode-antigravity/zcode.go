@@ -64,77 +64,85 @@ func (a *app) configureZCodeWithAccess(port int, models []modelInfo, includeGrok
 	if err != nil {
 		return "", false, err
 	}
+	var legacy zcodeConfigWrite
+	legacyMissing := false
 	raw, root, err := readJSONObject(a.paths.ZCodeConfig)
 	if err != nil {
-		if errors.Is(err, fs.ErrNotExist) {
-			return "", false, fmt.Errorf("找不到 %s；请先安装并运行一次 ZCode，再执行 sync 命令或平台同步脚本", a.paths.ZCodeConfig)
+		if !errors.Is(err, fs.ErrNotExist) {
+			return "", false, err
 		}
-		return "", false, err
+		// Current ZCode builds keep providers in provider_config.json and never
+		// create the legacy config.json; sync must proceed without it.
+		legacyMissing = true
 	}
-	providers, err := objectField(root, "provider")
-	if err != nil {
-		return "", false, err
-	}
-	if existing, exists := providers[providerID]; exists && !isManagedProvider(existing) {
-		return "", false, fmt.Errorf("ZCode 已存在同名 Provider %q，但它不是本程序创建的；为避免覆盖用户配置已停止", providerID)
-	}
-	modelMap := make(map[string]any, len(models))
-	for index, model := range models {
-		contextLimit := model.MaxInputTokens
-		if contextLimit <= 0 {
-			contextLimit = 200000
-		}
-		if isAllowedZCodeModel(model.ID) && (model.MaxInputTokens <= 0 || contextLimit > geminiContextLimit) {
-			contextLimit = geminiContextLimit
-		}
-		inputModalities := normalizedModalities(model.SupportedInputModalities)
-		outputModalities := normalizedModalities(model.SupportedOutputModalities)
-		entry := map[string]any{
-			"limit": map[string]any{
-				"context": contextLimit,
-			},
-			"modalities": map[string]any{
-				"input":  inputModalities,
-				"output": outputModalities,
-			},
-			"zcode": map[string]any{
-				"modified": false,
-				"priority": 200 + index,
-			},
-		}
-		if model.DisplayName != "" && model.DisplayName != model.ID {
-			entry["name"] = model.DisplayName
-		}
-		if variants := zcodeReasoningVariants(model); len(variants) > 0 {
-			entry["reasoning"] = map[string]any{
-				"enabled":        true,
-				"variants":       variants,
-				"defaultVariant": variants[len(variants)-1],
-			}
-		}
-		modelMap[model.ID] = entry
-	}
-	provider := map[string]any{
-		"name": providerName,
-		"kind": "anthropic",
-		"options": map[string]any{
-			"apiKey":         a.apiKey,
-			"baseURL":        a.gatewayURL(port),
-			"apiKeyRequired": true,
-		},
-		"enabled":                     true,
-		"source":                      "custom",
-		"models":                      modelMap,
-		"x-zcode-antigravity-managed": 1,
-	}
-	legacy := zcodeConfigWrite{path: a.paths.ZCodeConfig, reason: "before-sync", before: raw, existed: true}
-	existing, owned := providers[providerID]
-	if !jsonSemanticallyEqual(existing, provider) {
-		providers[providerID] = provider
-		root["provider"] = providers
-		legacy.after, err = marshalJSONObject(root)
+	var owned bool
+	if !legacyMissing {
+		providers, err := objectField(root, "provider")
 		if err != nil {
 			return "", false, err
+		}
+		if existing, exists := providers[providerID]; exists && !isManagedProvider(existing) {
+			return "", false, fmt.Errorf("ZCode 已存在同名 Provider %q，但它不是本程序创建的；为避免覆盖用户配置已停止", providerID)
+		}
+		_, owned = providers[providerID]
+		modelMap := make(map[string]any, len(models))
+		for index, model := range models {
+			contextLimit := model.MaxInputTokens
+			if contextLimit <= 0 {
+				contextLimit = 200000
+			}
+			if isAllowedZCodeModel(model.ID) && (model.MaxInputTokens <= 0 || contextLimit > geminiContextLimit) {
+				contextLimit = geminiContextLimit
+			}
+			inputModalities := normalizedModalities(model.SupportedInputModalities)
+			outputModalities := normalizedModalities(model.SupportedOutputModalities)
+			entry := map[string]any{
+				"limit": map[string]any{
+					"context": contextLimit,
+				},
+				"modalities": map[string]any{
+					"input":  inputModalities,
+					"output": outputModalities,
+				},
+				"zcode": map[string]any{
+					"modified": false,
+					"priority": 200 + index,
+				},
+			}
+			if model.DisplayName != "" && model.DisplayName != model.ID {
+				entry["name"] = model.DisplayName
+			}
+			if variants := zcodeReasoningVariants(model); len(variants) > 0 {
+				entry["reasoning"] = map[string]any{
+					"enabled":        true,
+					"variants":       variants,
+					"defaultVariant": variants[len(variants)-1],
+				}
+			}
+			modelMap[model.ID] = entry
+		}
+		provider := map[string]any{
+			"name": providerName,
+			"kind": "anthropic",
+			"options": map[string]any{
+				"apiKey":         a.apiKey,
+				"baseURL":        a.gatewayURL(port),
+				"apiKeyRequired": true,
+			},
+			"enabled":                     true,
+			"source":                      "custom",
+			"models":                      modelMap,
+			"x-zcode-antigravity-managed": 1,
+		}
+		legacy = zcodeConfigWrite{path: a.paths.ZCodeConfig, reason: "before-sync", before: raw, existed: true}
+		existing, _ := providers[providerID]
+		if !jsonSemanticallyEqual(existing, provider) {
+			providers[providerID] = provider
+			root["provider"] = providers
+			legacy.after, err = marshalJSONObject(root)
+			if err != nil {
+				return "", false, err
+			}
 		}
 	}
 	personal, err := a.preparePersonalProvider(port, models, owned)
@@ -345,33 +353,45 @@ func (a *app) removeZCodeProvider() error {
 	if a.zcodeRunning != nil && a.zcodeRunning() {
 		return fmt.Errorf("检测到 ZCode 仍在运行；请彻底退出后再删除 Provider")
 	}
+	var legacy zcodeConfigWrite
+	legacyMissing := false
 	raw, root, err := readJSONObject(a.paths.ZCodeConfig)
 	if err != nil {
-		return err
+		if !errors.Is(err, fs.ErrNotExist) {
+			return err
+		}
+		// Same compatibility rule as sync: current ZCode builds never create
+		// the legacy config.json, so removal only cleans provider_config.json.
+		legacyMissing = true
 	}
-	providers, err := objectField(root, "provider")
-	if err != nil {
-		return err
-	}
-	if _, exists := providers[providerID]; !exists {
-		fmt.Println("ZCode 中没有本程序的 Provider，无需删除。")
-		return nil
-	}
-	if !isManagedProvider(providers[providerID]) {
-		return fmt.Errorf("同名 Provider 没有本程序管理标记，拒绝删除")
-	}
-	delete(providers, providerID)
-	root["provider"] = providers
-	encoded, err := marshalJSONObject(root)
-	if err != nil {
-		return err
+	if !legacyMissing {
+		providers, err := objectField(root, "provider")
+		if err != nil {
+			return err
+		}
+		if rawProvider, exists := providers[providerID]; exists {
+			if !isManagedProvider(rawProvider) {
+				return fmt.Errorf("同名 Provider 没有本程序管理标记，拒绝删除")
+			}
+			delete(providers, providerID)
+			root["provider"] = providers
+			encoded, err := marshalJSONObject(root)
+			if err != nil {
+				return err
+			}
+			legacy = zcodeConfigWrite{path: a.paths.ZCodeConfig, reason: "before-remove", before: raw, after: encoded, existed: true}
+		}
 	}
 	personal, err := a.preparePersonalProvider(0, nil, true)
 	if err != nil {
 		return err
 	}
 	personal.reason = "provider-before-remove"
-	backup, err := a.commitZCodeConfigs(zcodeConfigWrite{path: a.paths.ZCodeConfig, reason: "before-remove", before: raw, after: encoded, existed: true}, personal)
+	if legacy.after == nil && personal.after == nil {
+		fmt.Println("ZCode 中没有本程序的 Provider，无需删除。")
+		return nil
+	}
+	backup, err := a.commitZCodeConfigs(legacy, personal)
 	if err != nil {
 		return err
 	}
@@ -482,6 +502,9 @@ func marshalJSONObject(root map[string]any) ([]byte, error) {
 func zcodeProviderStatus(path string) (configured bool, baseURL string, err error) {
 	_, root, err := readJSONObject(path)
 	if err != nil {
+		if errors.Is(err, fs.ErrNotExist) {
+			return false, "", nil
+		}
 		return false, "", err
 	}
 	providers, err := objectField(root, "provider")
