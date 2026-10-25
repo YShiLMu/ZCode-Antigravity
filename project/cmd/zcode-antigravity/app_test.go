@@ -658,6 +658,11 @@ func TestConfigureZCodeWorksWithoutLegacyConfig(t *testing.T) {
 	if selection["modelId"] != "gemini-3.8-flash" {
 		t.Fatalf("wrong default: %v", selection)
 	}
+	// A repeated sync must recognize its own provider inside the personal
+	// schema instead of failing the ownership guard.
+	if _, changed, err := a.configureZCode(18081, requiredTestModels()); err != nil || changed {
+		t.Fatalf("repeated sync: changed=%v err=%v", changed, err)
+	}
 	if err := a.removeZCodeProvider(); err != nil {
 		t.Fatal(err)
 	}

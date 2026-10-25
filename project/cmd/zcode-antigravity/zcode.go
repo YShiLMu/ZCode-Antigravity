@@ -65,6 +65,7 @@ func (a *app) configureZCodeWithAccess(port int, models []modelInfo, includeGrok
 		return "", false, err
 	}
 	var legacy zcodeConfigWrite
+	var owned bool
 	legacyMissing := false
 	raw, root, err := readJSONObject(a.paths.ZCodeConfig)
 	if err != nil {
@@ -74,8 +75,8 @@ func (a *app) configureZCodeWithAccess(port int, models []modelInfo, includeGrok
 		// Current ZCode builds keep providers in provider_config.json and never
 		// create the legacy config.json; sync must proceed without it.
 		legacyMissing = true
+		owned = a.personalProviderOwned()
 	}
-	var owned bool
 	if !legacyMissing {
 		providers, err := objectField(root, "provider")
 		if err != nil {

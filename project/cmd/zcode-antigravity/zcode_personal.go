@@ -17,6 +17,35 @@ type zcodeConfigWrite struct {
 	existed       bool
 }
 
+// personalProviderOwned reports whether the personal schema already carries our
+// provider. The provider ID is exclusive to this program, so its presence in
+// provider_config.json is sufficient proof of ownership when the legacy
+// config.json is unavailable for the usual managed-marker check.
+func (a *app) personalProviderOwned() bool {
+	_, root, err := readJSONObject(filepath.Join(filepath.Dir(a.paths.ZCodeConfig), "provider_config.json"))
+	if err != nil {
+		return false
+	}
+	config, err := objectField(root, "config")
+	if err != nil {
+		return false
+	}
+	providers, err := objectField(config, "providerConfigRules")
+	if err != nil {
+		return false
+	}
+	rules, ok := providers["providerRules"].([]any)
+	if !ok {
+		return false
+	}
+	for _, rule := range rules {
+		if typed, ok := rule.(map[string]any); ok && typed["providerId"] == providerID {
+			return true
+		}
+	}
+	return false
+}
+
 // Current ZCode reads provider_config.json; config.json remains necessary for older clients.
 func (a *app) preparePersonalProvider(port int, models []modelInfo, owned bool) (zcodeConfigWrite, error) {
 	update := zcodeConfigWrite{path: filepath.Join(filepath.Dir(a.paths.ZCodeConfig), "provider_config.json"), reason: "provider-before-sync"}
