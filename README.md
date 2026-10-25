@@ -9,24 +9,25 @@
 </p>
 
 <p align="center">
-  <img alt="Stable" src="https://img.shields.io/badge/stable-V1.1.0-2f6bff">
-  <img alt="macOS" src="https://img.shields.io/badge/macOS-12%2B-111111?logo=apple">
+  <img alt="Stable" src="https://img.shields.io/badge/stable-V1.2.0-2f6bff">
   <img alt="Windows" src="https://img.shields.io/badge/Windows-10%20%7C%2011-0078d4?logo=windows11">
   <img alt="Local only" src="https://img.shields.io/badge/API-loopback%20only-20a464">
 </p>
 
 <p align="center">
-  <a href="https://github.com/Hhz0823/ZCode-Antigravity/releases/tag/v1.1.0"><strong>下载 V1.1.0 正式版</strong></a>
+  <a href="https://github.com/YShiLMu/ZCode-Antigravity/releases/tag/v1.2.0"><strong>下载 V1.2.0 正式版</strong></a>
   · <a href="#快速开始">快速开始</a>
   · <a href="#一键接入-agent--cli">Agent 接入</a>
   · <a href="#隐私与安全">安全边界</a>
 </p>
 
+> **本仓库是 [Hhz0823/ZCode-Antigravity](https://github.com/Hhz0823/ZCode-Antigravity) 的社区 fork**，在其 V1.1.0 基础上新增 Gemini 4 Argon 支持并修复了新版 ZCode 的接入兼容性，感谢原作者。
+
 ZCode Antigravity 是面向 Windows 与 macOS 的本地 AI 控制中心。它负责账号授权、模型路由、
 ZCode / Agent 配置、额度监控与网络出口选择；默认只启用 Gemini，需要时可在设置中开启
 Google Antigravity 账号内的 Claude、Grok 和其他文本模型。
 
-> 最新正式版为 `V1.1.0`。main 分支源码已升级到 `1.2.0`：在保留 Gemini 3.8 / 3.7 默认配置的基础上，账号可用时自动接入 **Gemini 4 Argon**（2026-10-13 正式发布的最新旗舰模型），并保持 384K 上下文与 High 思考默认值及 SHA-256 校验的双平台自动更新。
+> 当前源码与最新正式版均为 `V1.2.0`：在保留 Gemini 3.8 / 3.7 默认配置的基础上，账号可用时自动接入 **Gemini 4 Argon**（2026-10-13 正式发布的最新旗舰模型），并完整支持只用 `provider_config.json` 的新版 ZCode。
 
 ## 核心功能
 
@@ -81,20 +82,22 @@ Google Claude、Grok 和其他 AI 文本模型默认关闭，可在“设置 →
 
 ## 下载
 
-前往 [V1.1.0 正式版 Release](https://github.com/Hhz0823/ZCode-Antigravity/releases/tag/v1.1.0) 下载：
+前往 [V1.2.0 正式版 Release](https://github.com/YShiLMu/ZCode-Antigravity/releases/tag/v1.2.0) 下载：
 
 | 文件 | 用途 | 推荐场景 |
 | --- | --- | --- |
-| `ZCode-Antigravity-macOS-Universal-v1.1.0.zip` | macOS Universal App 与校验 / 维护工具 | macOS 用户首选 |
-| `ZCode-Antigravity-Setup-v1.1.0.exe` | Windows 图形化安装器 | Windows 用户首选 |
-| `ZCode-Antigravity-OneClick-v1.1.0.bat` | 内嵌完整载荷的单文件安装器 | 备用安装方案 |
-| `ZCode-Antigravity-Windows-x64-1.1.0.zip` | 可逐文件校验的 Windows 便携包 | 手动部署与排错 |
-| `ZCode-Antigravity-Source-v1.1.0.zip` | 与发布标签对应的源码快照 | 审计与二次开发 |
-| `SHA256SUMS-v1.1.0.txt` | 全部正式版资产的 SHA-256 | 下载后完整性校验 |
+| `ZCode-Antigravity-Setup-v1.2.0.exe` | Windows 图形化安装器（内嵌完整载荷） | Windows 用户首选 |
+| `SHA256SUMS-v1.2.0.txt` | 包内全部文件的 SHA-256 | 下载后完整性校验 |
+| Source code (zip / tar.gz) | 与发布标签对应的源码快照（GitHub 自动附带） | 审计与二次开发 |
+
+V1.2.0 暂未构建 macOS 安装包；macOS 用户可使用上游 [V1.1.0 的 macOS 包](https://github.com/Hhz0823/ZCode-Antigravity/releases/tag/v1.1.0)（不含本 fork 的新模型与兼容性修复），或从源码构建。
 
 ## 快速开始
 
 ### macOS
+
+macOS 安装包未随 V1.2.0 发布，请先从上游 Release 获取 V1.1.0 的 macOS 包（步骤如下），
+或参考文末「从源码构建」。
 
 1. 完整解压 Universal ZIP，在 `Terminal Tools` 中运行 `Verify-Package.command` 校验安装包。
 2. 首次运行时按住 Control 点击 `ZCode Antigravity.app` 并选择“打开”。当前 App 使用临时签名，尚未公证。
@@ -106,8 +109,8 @@ Google Claude、Grok 和其他 AI 文本模型默认关闭，可在“设置 →
 ### Windows
 
 1. 从系统托盘完全退出 ZCode；仅关闭主窗口可能仍会留下 `ZCode.exe`。
-2. 校验 SHA-256 后运行 `ZCode-Antigravity-Setup-v1.1.0.exe`。当前安装器未使用商业代码签名证书。
-3. 登录 Antigravity 并点击“一键接入 ZCode”。程序会自动探测 Windows 系统代理与 v2rayN，无需强制开启 TUN。
+2. 校验 SHA-256 后运行 `ZCode-Antigravity-Setup-v1.2.0.exe`。当前安装器未使用商业代码签名证书。
+3. 登录 Antigravity 并点击“一键接入 ZCode”。程序会自动探测 Windows 系统代理与 v2rayN，无需强制开启 TUN；新版 ZCode 只使用 `provider_config.json` 也已完整支持。
 4. 重新打开 ZCode，选择 Provider `Google` 和目标模型；系统托盘图标可随时打开额度小组件。
 
 如需 Grok，在设置中启用 Grok 后完成 xAI 设备授权。Windows 会在软件内显示临时验证码；把它输入官方
@@ -147,16 +150,17 @@ Windows 自动网络顺序为：手动 `proxyURL` → 当前用户系统代理 �
 
 ## 已验证范围
 
-V1.1.0 正式版发布流程包括：
+V1.2.0（本 fork）的验证范围：
 
-- 管理器与固定 CLIProxyAPI 源码的 Go 测试、`go vet` 与依赖校验。
-- macOS arm64 / x86_64 类型检查、Universal 构建、签名结构、包内哈希和本机启动 / 网关健康检查。
-- Windows x64 Go 交叉编译、Electron IPC allowlist 测试、前端生产构建、ASAR 内容与 PE32+ GUI 子系统检查。
-- OAuth PKCE / callback、加密存储、模型路由、额度降级、双提供商切换和八类 Agent 配置回归测试。
-- Gemini 文本、Google Search 引用、图片理解和视频时序理解的既有真实账号验证。
+- Go Core（管理器与固定 CLIProxyAPI 源码）的 `go build`、`go vet` 与全量单元测试通过，含新增的
+  无旧版 `config.json` 同步 / 重复同步 / Provider 删除 / 状态读取回归测试。
+- Windows x64 安装器由源码本机构建，校验和见 Release 资产 `SHA256SUMS-v1.2.0.txt`。
+- 控制中心复用上游 V1.1.0 已验证的 Electron 包（内嵌 OAuth 桌面凭据无法从公开源码重建），与
+  V1.2.0 Core 的接口已验证兼容；前端版本号显示仍为 1.1.0，属预期。
+- 已在一台只使用 `provider_config.json` 的新版 ZCode 环境完成真实接入验证。
+- Gemini 4 Argon 的真实账号调用尚未实测（需要具备相应订阅权限的账号）；注入与回退逻辑由单元测试覆盖。
 
-Windows 正式包由 macOS 交叉构建并完成静态与自动化验证；发布时未冒充新的 Windows 目标机实测。
-macOS Intel 切片完成交叉编译和结构校验，但尚未完成 Intel 实机启动测试。详细记录见
+上游 V1.1.0 的完整发布验证记录（双平台构建、OAuth、加密存储等）见
 [`VERIFICATION.md`](VERIFICATION.md)。
 
 ## 从源码构建
@@ -213,7 +217,7 @@ Gemini 4 Argon 需要相应的 Google 订阅或 API 权限。未开通的账号�
 ### 为什么系统提示未知发布者？
 
 当前 Windows 安装器未使用商业代码签名，macOS App 使用临时签名且未公证。请先核对 Release 中的
-`SHA256SUMS-v1.1.0.txt`，哈希完全一致后再运行；不要全局关闭系统安全机制。
+`SHA256SUMS-v1.2.0.txt`，哈希完全一致后再运行；不要全局关闭系统安全机制。
 
 ## 商标与免责声明
 
