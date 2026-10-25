@@ -501,6 +501,48 @@ func marshalJSONObject(root map[string]any) ([]byte, error) {
 }
 
 func zcodeProviderStatus(path string) (configured bool, baseURL string, err error) {
+	configured, baseURL, err = legacyZCodeProviderStatus(path)
+	if err != nil {
+		return configured, baseURL, err
+	}
+	if !configured {
+		// Current ZCode builds keep providers only in provider_config.json.
+		configured, baseURL = personalZCodeProviderStatus(filepath.Join(filepath.Dir(path), "provider_config.json"))
+	}
+	return configured, baseURL, nil
+}
+
+func personalZCodeProviderStatus(path string) (configured bool, baseURL string) {
+	_, root, err := readJSONObject(path)
+	if err != nil {
+		return false, ""
+	}
+	config, err := objectField(root, "config")
+	if err != nil {
+		return false, ""
+	}
+	providers, err := objectField(config, "providerConfigRules")
+	if err != nil {
+		return false, ""
+	}
+	rules, ok := providers["providerRules"].([]any)
+	if !ok {
+		return false, ""
+	}
+	for _, rule := range rules {
+		typed, ok := rule.(map[string]any)
+		if !ok || typed["providerId"] != providerID {
+			continue
+		}
+		providerConfig, _ := typed["config"].(map[string]any)
+		api, _ := providerConfig["api"].(map[string]any)
+		baseURL, _ := api["baseUrl"].(string)
+		return true, baseURL
+	}
+	return false, ""
+}
+
+func legacyZCodeProviderStatus(path string) (configured bool, baseURL string, err error) {
 	_, root, err := readJSONObject(path)
 	if err != nil {
 		if errors.Is(err, fs.ErrNotExist) {

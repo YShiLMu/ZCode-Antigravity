@@ -644,9 +644,12 @@ func TestConfigureZCodeWorksWithoutLegacyConfig(t *testing.T) {
 	if _, err := os.Stat(a.paths.ZCodeConfig); !os.IsNotExist(err) {
 		t.Fatal("legacy config.json must not be created")
 	}
-	configured, _, err := zcodeProviderStatus(a.paths.ZCodeConfig)
-	if err != nil || configured {
-		t.Fatalf("legacy status = configured=%v err=%v", configured, err)
+	configured, baseURL, err := zcodeProviderStatus(a.paths.ZCodeConfig)
+	if err != nil || !configured {
+		t.Fatalf("status after sync = configured=%v err=%v", configured, err)
+	}
+	if !strings.Contains(baseURL, "127.0.0.1:18081") {
+		t.Fatalf("status baseURL = %q", baseURL)
 	}
 	personalPath := filepath.Join(filepath.Dir(a.paths.ZCodeConfig), "provider_config.json")
 	_, root, err := readJSONObject(personalPath)

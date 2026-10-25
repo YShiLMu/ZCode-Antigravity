@@ -219,21 +219,79 @@ func openZCodeApplication() error {
 		filepath.Join(os.Getenv("PROGRAMFILES(X86)"), "ZCode", "ZCode.exe"),
 		filepath.Join(os.Getenv("LOCALAPPDATA"), "Programs", "ZCode", "ZCode.exe"),
 	}
+	candidates = append(candidates, registeredZCodeCandidates()...)
+	if value, err := exec.LookPath("ZCode.exe"); err == nil {
+		candidates = append(candidates, value)
+	}
 	for _, candidate := range candidates {
-		if strings.TrimSpace(candidate) == "" {
+		if !filepath.IsAbs(candidate) {
 			continue
 		}
-		if info, err := os.Stat(candidate); err != nil || info.IsDir() {
-			continue
+		if info, err := os.Stat(candidate); err == nil && info.Mode().IsRegular() {
+			cmd := exec.Command(candidate)
+			prepareChildProcess(cmd)
+			if err := cmd.Start(); err != nil {
+				return err
+			}
+			return cmd.Process.Release()
 		}
-		cmd := exec.Command(candidate)
-		prepareChildProcess(cmd)
-		if err := cmd.Start(); err != nil {
-			return err
-		}
-		return cmd.Process.Release()
 	}
 	return fmt.Errorf("未找到 ZCode.exe，请先安装 ZCode")
+}
+
+// registeredZCodeCandidates derives install locations from the registry, since
+// ZCode may be installed into a custom directory outside the default paths.
+func registeredZCodeCandidates() []string {
+	candidates := []string{}
+	for _, hive := range []registry.Key{registry.CURRENT_USER, registry.LOCAL_MACHINE} {
+		if key, err := registry.OpenKey(hive, `SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\ZCode.exe`, registry.QUERY_VALUE); err == nil {
+			value, _, _ := key.GetStringValue("")
+			_ = key.Close()
+			candidates = append(candidates, strings.Trim(value, `"`))
+		}
+		uninstall, err := registry.OpenKey(hive, `SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall`, registry.ENUMERATE_SUB_KEYS|registry.QUERY_VALUE)
+		if err != nil {
+			continue
+		}
+		names, err := uninstall.ReadSubKeyNames(-1)
+		_ = uninstall.Close()
+		if err != nil {
+			continue
+		}
+		for _, name := range names {
+			key, err := registry.OpenKey(hive, `SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\`+name, registry.QUERY_VALUE)
+			if err != nil {
+				continue
+			}
+			displayName, _, _ := key.GetStringValue("DisplayName")
+			if !strings.HasPrefix(strings.ToLower(strings.TrimSpace(displayName)), "zcode") {
+				_ = key.Close()
+				continue
+			}
+			for _, field := range []string{"DisplayIcon", "UninstallString", "InstallLocation"} {
+				value, _, _ := key.GetStringValue(field)
+				if candidate := zcodeExeFromReference(value); candidate != "" {
+					candidates = append(candidates, candidate)
+				}
+			}
+			_ = key.Close()
+		}
+	}
+	return candidates
+}
+
+func zcodeExeFromReference(value string) string {
+	value = strings.TrimSpace(strings.Trim(value, `"`))
+	if value == "" {
+		return ""
+	}
+	if info, err := os.Stat(value); err == nil && info.IsDir() {
+		return filepath.Join(value, "ZCode.exe")
+	}
+	if idx := strings.LastIndexAny(value, `\/`); idx > 0 {
+		return filepath.Join(value[:idx], "ZCode.exe")
+	}
+	return ""
 }
 
 func antigravityApplicationPath() string {
