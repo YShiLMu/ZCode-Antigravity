@@ -16,6 +16,16 @@ func TestPreferredConnectorModelHonorsConfiguredBackgroundModel(t *testing.T) {
 	if got := preferredConnectorModel("antigravity", models, ""); got != "gemini-3.8-flash" {
 		t.Fatalf("newest fallback model = %q", got)
 	}
+	withArgon := append(models, modelInfo{ID: "gemini-4-argon"})
+	if got := preferredConnectorModel("antigravity", withArgon, "gemini-3.7-flash"); got != "gemini-3.7-flash" {
+		t.Fatalf("configured background model must win over Argon = %q", got)
+	}
+	if got := preferredConnectorModel("antigravity", withArgon, "gemini-4-argon"); got != "gemini-4-argon" {
+		t.Fatalf("Argon preferred model = %q", got)
+	}
+	if got := preferredConnectorModel("antigravity", withArgon, ""); got != "gemini-4-argon" {
+		t.Fatalf("newest model without explicit preference = %q", got)
+	}
 }
 
 func TestAgentConnectorsIncludeOneClickDeepSeekHarness(t *testing.T) {

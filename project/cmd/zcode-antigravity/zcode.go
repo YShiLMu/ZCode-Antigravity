@@ -20,6 +20,14 @@ var zcodeModelAllowlist = []string{
 	"gemini-3.7-flash",
 }
 
+// zcodeModelOptional lists premium Gemini models that are injected only when
+// the Antigravity catalog actually offers them to the logged-in account. They
+// must never make the sync fail: accounts without the subscription keep using
+// the allowlist models.
+var zcodeModelOptional = []string{
+	"gemini-4-argon",
+}
+
 type zcodeModelAlias struct {
 	UpstreamID  string
 	ClientID    string
@@ -27,6 +35,7 @@ type zcodeModelAlias struct {
 }
 
 var zcodeModelAliases = []zcodeModelAlias{
+	{UpstreamID: "gemini-4-argon-high", ClientID: "gemini-4-argon", DisplayName: "Gemini 4 Argon"},
 	{UpstreamID: "gemini-3.8-flash-high", ClientID: "gemini-3.8-flash", DisplayName: "Gemini 3.8 Flash"},
 	{UpstreamID: "gemini-3.7-flash-high", ClientID: "gemini-3.7-flash", DisplayName: "Gemini 3.7 Flash"},
 }
@@ -156,7 +165,7 @@ func selectAgentModels(catalog []modelInfo, includeGemini, includeGrok, includeO
 		model.ID = id
 		byID[id] = model
 	}
-	selected := make([]modelInfo, 0, len(zcodeModelAllowlist)+8)
+	selected := make([]modelInfo, 0, len(zcodeModelAllowlist)+len(zcodeModelOptional)+8)
 	if includeGemini {
 		missing := make([]string, 0)
 		for _, id := range zcodeModelAllowlist {
@@ -169,6 +178,15 @@ func selectAgentModels(catalog []modelInfo, includeGemini, includeGrok, includeO
 		}
 		if len(missing) > 0 {
 			return nil, fmt.Errorf("Antigravity 当前账号缺少必须模型: %s；请更新本程序、重启网关并确认账号具有对应模型权限", strings.Join(missing, ", "))
+		}
+		// Optional premium models go first when present, so downstream default
+		// selection (models[0]) prefers them without failing when absent.
+		for _, id := range zcodeModelOptional {
+			model, ok := byID[id]
+			if !ok {
+				continue
+			}
+			selected = append([]modelInfo{model}, selected...)
 		}
 	}
 	if includeGrok {
@@ -269,6 +287,11 @@ func isAllowedZCodeModel(id string) bool {
 	id = strings.TrimSpace(id)
 	for _, allowed := range zcodeModelAllowlist {
 		if id == allowed {
+			return true
+		}
+	}
+	for _, optional := range zcodeModelOptional {
+		if id == optional {
 			return true
 		}
 	}

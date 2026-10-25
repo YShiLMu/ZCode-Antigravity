@@ -352,7 +352,7 @@ function SettingsView({ manager, saveSetting, saving, syncing, onSync, update, u
   return (
     <div className="grid gap-4 md:grid-cols-[1fr_.85fr]">
       <Card>
-        <CardHeader eyebrow="MODEL ACCESS" title="模型与偏好" description="Gemini 3.7 / 3.8 默认使用 384K 和 High；其他模型可按需开启" action={saving ? <LoaderCircle className="size-4 animate-spin" /> : undefined} />
+        <CardHeader eyebrow="MODEL ACCESS" title="模型与偏好" description="Gemini 4 Argon / 3.8 默认使用 384K 和 High；未订阅 Argon 的账号自动回退 3.8/3.7" action={saving ? <LoaderCircle className="size-4 animate-spin" /> : undefined} />
         <div className="space-y-3 p-5">
           <Switch checked={manager?.settings.enableGrokModels ?? false} onChange={(value) => saveSetting({ enableGrokModels: value })} label="Grok 模型" />
           <Switch checked={manager?.settings.enableOtherModels ?? false} onChange={(value) => saveSetting({ enableOtherModels: value })} label="Google Claude / 其他 AI 文本模型" />
@@ -512,7 +512,7 @@ function ControlCenterApp() {
   const [usage, setUsage] = useState<UsageReport>();
   const [manager, setManager] = useState<ManagerReport>();
   const [connectors, setConnectors] = useState<ConnectorResponse>();
-  const [version, setVersion] = useState("1.1.0");
+  const [version, setVersion] = useState("1.2.0");
   const [updateReport, setUpdateReport] = useState<UpdateReport>();
   const [updateChecking, setUpdateChecking] = useState(false);
   const [updateInstalling, setUpdateInstalling] = useState(false);
@@ -714,7 +714,7 @@ function ControlCenterApp() {
     initialized.current = true;
     void (async () => {
       try {
-        const startup: StartupInfo = hasDesktopBridge() ? await desktopBridge()!.startupInfo() : { version: "1.1.0", autoSetup: false, postUpdate: false };
+        const startup: StartupInfo = hasDesktopBridge() ? await desktopBridge()!.startupInfo() : { version: "1.2.0", autoSetup: false, postUpdate: false };
         setVersion(startup.version);
         await refresh(true);
         if (startup.postUpdate) await runAction("sync");

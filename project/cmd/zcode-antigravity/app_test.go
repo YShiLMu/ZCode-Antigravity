@@ -92,6 +92,9 @@ func TestWriteBackendConfigRestrictsNetworkAndCredits(t *testing.T) {
 		"disable-control-panel: true",
 		"disable-cloaking-model-list: true",
 		`proxy-url: "socks5://127.0.0.1:1080"`,
+		`name: "gemini-4-argon-high"`,
+		`alias: "gemini-4-argon"`,
+		`display-name: "Gemini 4 Argon"`,
 		`name: "gemini-3.8-flash-high"`,
 		`alias: "gemini-3.8-flash"`,
 		`display-name: "Gemini 3.8 Flash"`,
@@ -106,8 +109,8 @@ func TestWriteBackendConfigRestrictsNetworkAndCredits(t *testing.T) {
 			t.Errorf("config missing %q", check)
 		}
 	}
-	if got := strings.Count(text, "force-mapping: true"); got != 2 {
-		t.Fatalf("force-mapping entry count = %d, want 2", got)
+	if got := strings.Count(text, "force-mapping: true"); got != 3 {
+		t.Fatalf("force-mapping entry count = %d, want 3", got)
 	}
 	if strings.Contains(text, "fork: true") {
 		t.Fatal("upstream IDs must not remain client-visible")
@@ -279,26 +282,62 @@ func TestSelectZCodeModelsOnlyAllowsCurrentGeminiFlash(t *testing.T) {
 	if got := fmt.Sprint(modelIDs(models)); got != "[gemini-3.7-flash gemini-3.8-flash]" {
 		t.Fatalf("selected models = %s", got)
 	}
-	if isAllowedZCodeModel("claude-opus-4-6-thinking") || isAllowedZCodeModel("gemini-3.8-flash-high") || !isAllowedZCodeModel("gemini-3.8-flash") || !isAllowedZCodeModel("gemini-3.7-flash") || isAllowedZCodeModel("gemini-web-search") || isAllowedZCodeModel("gemini-3.6-flash") {
+	if isAllowedZCodeModel("claude-opus-4-6-thinking") || isAllowedZCodeModel("gemini-3.8-flash-high") || !isAllowedZCodeModel("gemini-3.8-flash") || !isAllowedZCodeModel("gemini-3.7-flash") || !isAllowedZCodeModel("gemini-4-argon") || isAllowedZCodeModel("gemini-web-search") || isAllowedZCodeModel("gemini-3.6-flash") {
 		t.Fatal("model allowlist decision is incorrect")
 	}
 }
 
+func TestSelectZCodeModelsInjectsOptionalArgonOnlyWhenPresent(t *testing.T) {
+	withoutArgon, err := selectZCodeModels(requiredTestModels())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := fmt.Sprint(modelIDs(withoutArgon)); got != "[gemini-3.7-flash gemini-3.8-flash]" {
+		t.Fatalf("catalog without Argon must still sync: %s", got)
+	}
+	argon := modelInfo{
+		ID:                        "gemini-4-argon",
+		DisplayName:               "Gemini 4 Argon",
+		MaxInputTokens:            1048576,
+		MaxTokens:                 65536,
+		Thinking:                  &thinkingSupport{Min: 32, Max: 65535, DynamicAllowed: true, Levels: []string{"minimal", "low", "medium", "high"}},
+		SupportedInputModalities:  []string{"text", "image", "audio", "video"},
+		SupportedOutputModalities: []string{"text"},
+	}
+	withArgon, err := selectZCodeModels(append(requiredTestModels(), argon))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := fmt.Sprint(modelIDs(withArgon)); got != "[gemini-3.7-flash gemini-3.8-flash gemini-4-argon]" {
+		t.Fatalf("selected models = %s", got)
+	}
+	if withArgon[0].ID != "gemini-4-argon" {
+		t.Fatalf("optional Argon must be the first selected model, got %s", withArgon[0].ID)
+	}
+}
+
 func TestZCodeModelAliasesMatchClientAllowlist(t *testing.T) {
-	if len(zcodeModelAliases) != len(zcodeModelAllowlist) {
-		t.Fatalf("aliases=%d allowlist=%d", len(zcodeModelAliases), len(zcodeModelAllowlist))
+	managed := make(map[string]bool, len(zcodeModelAllowlist)+len(zcodeModelOptional))
+	for _, id := range zcodeModelAllowlist {
+		managed[id] = true
+	}
+	for _, id := range zcodeModelOptional {
+		managed[id] = true
 	}
 	seen := make(map[string]bool, len(zcodeModelAliases))
+	if len(zcodeModelAliases) != len(managed) {
+		t.Fatalf("aliases=%d managed models=%d", len(zcodeModelAliases), len(managed))
+	}
 	for _, alias := range zcodeModelAliases {
-		isCleanFlashAlias := strings.HasSuffix(alias.UpstreamID, "-high") && !strings.HasSuffix(alias.ClientID, "-high")
-		if alias.UpstreamID == alias.ClientID || !isCleanFlashAlias {
+		isCleanHighAlias := strings.HasSuffix(alias.UpstreamID, "-high") && !strings.HasSuffix(alias.ClientID, "-high")
+		if alias.UpstreamID == alias.ClientID || !isCleanHighAlias {
 			t.Fatalf("invalid clean model alias: %#v", alias)
 		}
 		seen[alias.ClientID] = true
 	}
-	for _, id := range zcodeModelAllowlist {
+	for id := range managed {
 		if !seen[id] {
-			t.Fatalf("allowlisted client model %q has no upstream alias", id)
+			t.Fatalf("managed client model %q has no upstream alias", id)
 		}
 	}
 }

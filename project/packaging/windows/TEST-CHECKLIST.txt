@@ -54,13 +54,15 @@ Windows acceptance checklist
     Kimi Code, and OpenCode preserves unrelated settings, creates backups, and selects the current model.
 [ ] Model list contains gemini-3.8-flash with 1,048,576 context tokens and no redundant -high suffix.
 [ ] Model list contains gemini-3.7-flash with 1,048,576 context tokens and no redundant -high suffix.
-[ ] Gemini-only mode contains exactly Gemini 3.8 and 3.7 with 393216 context tokens and High reasoning by default; it contains no Claude, GPT, agent or image model.
+[ ] gemini-4-argon appears only when the signed-in account offers it; without it the sync still succeeds with 3.8/3.7.
+[ ] Gemini-only mode contains Gemini 3.8 and 3.7 (plus gemini-4-argon when the account offers it) with 393216 context tokens and High reasoning by default; it contains no Claude, GPT, agent or image model.
 [ ] Gemini 3.8 and 3.7 Flash reasoning dropdowns contain Low, Medium, and High.
 [ ] One request at each Gemini 3.8 reasoning level completes successfully.
 [ ] Test-Gemini-3.8-Flash.bat returns ZCODE_SMOKE_OK and response model gemini-3.8-flash.
 [ ] Test-Gemini-3.7-Flash.bat returns ZCODE_SMOKE_OK and writes last-smoke-test.json.
 [ ] In ZCode, one small gemini-3.7-flash prompt returns a real model response.
 [ ] Test-Gemini-3.7-Flash.bat returns ZCODE_SMOKE_OK and response model gemini-3.7-flash.
+[ ] On an eligible account, Test-Gemini-4-Argon.bat returns ZCODE_SMOKE_OK and response model gemini-4-argon.
 [ ] After enabling Google Claude / other models, ZCode lists claude-sonnet-4-6 and claude-opus-4-6-thinking under Provider Google.
 [ ] Test-Claude-Sonnet-4.6.bat returns ZCODE_SMOKE_OK and response model claude-sonnet-4-6.
 [ ] Test-Grok-Build.bat returns ZCODE_SMOKE_OK and response model grok-build-0.1.

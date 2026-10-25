@@ -114,7 +114,7 @@ func defaultSettings() settings {
 		EnableGrokModels:      false,
 		EnableOtherModels:     false,
 		AutoInstallUpdates:    false,
-		BackgroundModel:       "gemini-3.7-flash",
+		BackgroundModel:       "gemini-4-argon",
 		Theme:                 "system",
 		LiquidGlass:           true,
 	}

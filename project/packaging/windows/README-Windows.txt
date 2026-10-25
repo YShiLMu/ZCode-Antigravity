@@ -1,10 +1,10 @@
-ZCode Antigravity Bridge 1.1.0 — Windows x64
+ZCode Antigravity Bridge 1.2.0 — Windows x64
 ============================================
 
 Installation and updates
 ------------------------
 1. Completely exit ZCode from its system-tray menu before installing or syncing.
-2. Run ZCode-Antigravity-Setup-v1.1.0.exe. Installation is for the current user.
+2. Run ZCode-Antigravity-Setup-v1.2.0.exe. Installation is for the current user.
 3. Open the control center, add a Google account if needed, then use One-click ZCode setup.
 4. When upgrading, use Repair and resync to apply the new model defaults.
 
@@ -13,8 +13,8 @@ its embedded payload and retains the previous version for rollback. Download che
 the same GitHub release and compare them before running an unsigned installer.
 
 Alternative packages:
-- ZCode-Antigravity-OneClick-v1.1.0.bat: single-file fallback installer.
-- ZCode-Antigravity-Windows-x64-1.1.0.zip: portable package with SHA256SUMS.txt.
+- ZCode-Antigravity-OneClick-v1.2.0.bat: single-file fallback installer.
+- ZCode-Antigravity-Windows-x64-1.2.0.zip: portable package with SHA256SUMS.txt.
 - Verify-Package.bat: validate the package's core executables.
 
 Network and credentials
@@ -25,14 +25,16 @@ or the control center for an explicit proxy when necessary. The local API key is
 this computer; account tokens are protected with current-user Windows DPAPI.
 
 Data and settings are under %LOCALAPPDATA%\ZCodeAntigravity. Versioned application files are
-under app-1.1.0. Do not publish your data directory, auth files, API key, raw configuration or logs.
+under app-1.2.0. Do not publish your data directory, auth files, API key, raw configuration or logs.
 The distribution includes the OAuth desktop application configuration required for login;
 user tokens are never included in release assets.
 
 Gemini defaults and current ZCode
 ---------------------------------
-Only gemini-3.8-flash and gemini-3.7-flash are injected by default. Each clean model ID maps to
-its exact upstream High entry. No older model is renamed to impersonate a newer version.
+Gemini 3.8 Flash and Gemini 3.7 Flash are always injected. Gemini 4 Argon is added automatically
+when the signed-in account offers it (AI Ultra / paid eligibility); accounts without it keep the
+same 3.8/3.7 defaults and never fail the sync. Each clean model ID maps to its exact upstream
+High entry. No older model is renamed to impersonate a newer version.
 
 Default context: 384K = 393,216 tokens, capped by a smaller declared upstream input limit.
 Default reasoning: High. Current ZCode's enabled switch explicitly requests adaptive thinking
@@ -75,6 +77,7 @@ ZCode-Antigravity.exe version
 ZCode-Antigravity.exe status
 ZCode-Antigravity.exe doctor
 ZCode-Antigravity.exe sync
+ZCode-Antigravity.exe smoke gemini-4-argon
 ZCode-Antigravity.exe smoke gemini-3.8-flash
 ZCode-Antigravity.exe smoke gemini-3.7-flash
 
@@ -84,7 +87,7 @@ remaining validation boundaries are documented in the GitHub repository's VERIFI
 
 Components and licenses
 -----------------------
-Bridge: 1.1.0. Electron: 44.0.0. React: 19.2.8. Tailwind CSS: 4.3.3.
+Bridge: 1.2.0. Electron: 44.0.0. React: 19.2.8. Tailwind CSS: 4.3.3.
 Backend: CLIProxyAPI v7.2.132, local build 7.2.132-zcode.14.
 Upstream commit: 78f0c4079e3e6273d65d03b5549cffc898703264.
 See THIRD-PARTY-NOTICES.txt, WEB-DEPENDENCIES.txt, LICENSE.electron.txt,

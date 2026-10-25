@@ -26,7 +26,7 @@ ZCode Antigravity 是面向 Windows 与 macOS 的本地 AI 控制中心。它负
 ZCode / Agent 配置、额度监控与网络出口选择；默认只启用 Gemini，需要时可在设置中开启
 Google Antigravity 账号内的 Claude、Grok 和其他文本模型。
 
-> 当前源码与最新正式版均为 `1.1.0`，默认 Gemini 3.8 / 3.7、384K 上下文和 High 思考，支持经过 SHA-256 校验的双平台自动更新。
+> 最新正式版为 `V1.1.0`。main 分支源码已升级到 `1.2.0`：在保留 Gemini 3.8 / 3.7 默认配置的基础上，账号可用时自动接入 **Gemini 4 Argon**（2026-10-13 正式发布的最新旗舰模型），并保持 384K 上下文与 High 思考默认值及 SHA-256 校验的双平台自动更新。
 
 ## 核心功能
 
@@ -46,10 +46,13 @@ Google Antigravity 账号内的 Claude、Grok 和其他文本模型。
 
 默认的 Antigravity 模型：
 
-- `gemini-3.8-flash`：默认模型，支持多模态输入。
+- `gemini-4-argon`：Gemini 4 Argon，2026 年 10 月 13 日发布的最新旗舰推理模型；仅当当前
+  登录账号的模型目录中实际提供时自动注入（需要相应订阅权限），并作为默认首选模型。
+- `gemini-3.8-flash`：所有账号默认可用的稳定模型，支持多模态输入。
 - `gemini-3.7-flash`：通用对话、编程与多模态理解。
 
-两者默认上下文为 **384K（393,216 tokens）**，并开启 **High** 思考。新版 ZCode 中“开启思考”
+账号没有 Gemini 4 Argon 权限时，同步不会失败，自动回退到 3.8 / 3.7 默认组合。
+这些模型默认上下文为 **384K（393,216 tokens）**，并开启 **High** 思考。新版 ZCode 中“开启思考”
 明确发送 High，“关闭”发送禁用思考请求；旧版保留 Low / Medium / High，默认 High。
 同步会移除本程序管理的 Gemini 3.6 及更早模型，包括基于 3.1 的旧 `gemini-web-search` 别名。
 普通模型不会因为提示词写了“搜索”就自动联网；需要网页信息时请使用客户端的搜索工具。
@@ -190,8 +193,13 @@ npm run package:windows
 
 ### 为什么 Gemini 没有联网搜索？
 
-新版仅保留 Gemini 3.7 / 3.8，旧的 Google Search 别名使用 Gemini 3.1，已一并移除。
+新版保留 Gemini 4 Argon / 3.8 / 3.7，旧的 Google Search 别名使用 Gemini 3.1，已一并移除。
 需要最新网页信息时使用客户端提供的搜索工具。
+
+### 为什么我的账号里没有 Gemini 4 Argon？
+
+Gemini 4 Argon 需要相应的 Google 订阅或 API 权限。未开通的账号不会注入该模型，
+同步自动回退到 Gemini 3.8 / 3.7；开通后在控制中心重新同步即可使用。
 
 ### 新添加的 Google 账号无法使用模型？
 

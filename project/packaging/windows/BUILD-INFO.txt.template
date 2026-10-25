@@ -1,20 +1,20 @@
 ZCode Antigravity Bridge build information
 ===========================================
 
-Package: ZCode-Antigravity-Windows-x64-1.1.0
+Package: ZCode-Antigravity-Windows-x64-1.2.0
 Build date (UTC): __BUILD_DATE__
 Target: Windows x64 (PE32+ Go Core and Electron GUI control center)
 
 Manager
 -------
-Version: 1.1.0
+Version: 1.2.0
 Go: 1.26.4
 CGO: disabled
 SHA-256: __MANAGER_SHA256__
 
 Control center
 --------------
-Version: 1.1.0
+Version: 1.2.0
 UI: Electron 44.0.0, React 19.2.8, Tailwind CSS 4.3.3, shadcn-style components
 Native shell: Electron main/preload with context isolation and renderer sandbox
 Subsystem: Windows GUI (no console window)
@@ -35,7 +35,8 @@ SHA-256: __BACKEND_SHA256__
 
 Release behavior
 -----------------
-- Gemini 3.8 / 3.7 only by default, 393216 context tokens and High reasoning.
+- Gemini 3.8 / 3.7 by default with 393216 context tokens and High reasoning;
+  Gemini 4 Argon is injected automatically when the account offers it.
 - Compatible legacy and current ZCode provider configuration with backup and rollback.
 - Optional Google Claude, Grok and other text-model access remains opt-in.
 - Official Antigravity launch/download and explicit Google verification guidance.
