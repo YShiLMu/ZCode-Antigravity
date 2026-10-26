@@ -34,7 +34,7 @@ Google Antigravity 账号内的 Claude、Grok 和其他文本模型。
 | 功能 | 能做什么 |
 | --- | --- |
 | **Gemini 默认，Claude / Grok 可选** | 默认只向客户端暴露 Gemini；Google Claude、Grok / xAI 与其他文本模型按需开启。 |
-| **384K + High 默认配置** | 同步新版与旧版 ZCode 配置；新版思考开关的“开启”明确映射为 High。 |
+| **384K + 三级思考配置** | 同步新版与旧版 ZCode 配置；完整支持 Low / Medium / High 三级思考调节，默认 High。 |
 | **多模态输入** | Gemini Flash 支持文本、图片、音频和视频；Google Claude 支持文本与图片输入，当前均为文本输出。 |
 | **一键接入更多 Agent** | 自动备份并合并 ZCode、DeepSeek Harness、Grok Build、Codex、Claude Code、Gemini CLI、Qwen Code、Kimi Code 与 OpenCode 配置。 |
 | **无需强制开启 TUN** | Windows 自动使用系统代理或运行中的 v2rayN mixed / HTTP 代理，均不可用时才直连；手动代理始终优先。 |
@@ -53,8 +53,8 @@ Google Antigravity 账号内的 Claude、Grok 和其他文本模型。
 - `gemini-3.7-flash`：通用对话、编程与多模态理解。
 
 账号没有 Gemini 4 Argon 权限时，同步不会失败，自动回退到 3.8 / 3.7 默认组合。
-这些模型默认上下文为 **384K（393,216 tokens）**，并开启 **High** 思考。新版 ZCode 中“开启思考”
-明确发送 High，“关闭”发送禁用思考请求；旧版保留 Low / Medium / High，默认 High。
+这些模型默认上下文为 **384K（393,216 tokens）**，并在 ZCode 中提供 **Low / Medium / High** 三级思考深度选项，
+默认选择 High 思考。无论是新版还是旧版 ZCode 均可自由切换三级思考，重新同步时会自动保持已有选择。
 同步会移除本程序管理的 Gemini 3.6 及更早模型，包括基于 3.1 的旧 `gemini-web-search` 别名。
 普通模型不会因为提示词写了“搜索”就自动联网；需要网页信息时请使用客户端的搜索工具。
 Google Claude、Grok 和其他 AI 文本模型默认关闭，可在“设置 → 模型”中开启并重新同步。

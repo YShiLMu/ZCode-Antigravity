@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 )
 
-const geminiHighReasoningMap = `reasoningLevel == "disabled" ? {"thinking":{"type":"disabled"},"output_config":null} : {"thinking":{"type":"adaptive"},"output_config":{"effort":"high"}}`
+const geminiReasoningMap = `reasoningLevel == "low" ? {"thinking":{"type":"adaptive"},"output_config":{"effort":"low"}} : (reasoningLevel == "medium" ? {"thinking":{"type":"adaptive"},"output_config":{"effort":"medium"}} : (reasoningLevel == "disabled" ? {"thinking":{"type":"disabled"},"output_config":null} : {"thinking":{"type":"adaptive"},"output_config":{"effort":"high"}}))`
 
 type zcodeConfigWrite struct {
 	path, reason  string
@@ -134,28 +134,38 @@ func (a *app) preparePersonalProvider(port int, models []modelInfo, owned bool) 
 			}
 			properties["inputFormat"] = input
 			modelConfig := map[string]any{"enabled": true, "properties": properties}
-			if isAllowedZCodeModel(model.ID) {
-				modelConfig["optionSpecs"] = map[string]any{"reasoningLevel": map[string]any{"values": []string{"disabled", "enabled"}, "map": geminiHighReasoningMap}}
+				if isAllowedZCodeModel(model.ID) {
+					variants := zcodeReasoningVariants(model)
+					if len(variants) == 0 {
+						variants = []string{"low", "medium", "high"}
+					}
+					modelConfig["optionSpecs"] = map[string]any{"reasoningLevel": map[string]any{"values": variants, "map": geminiReasoningMap}}
+				}
+				modelRules["providerModelRules"] = append(modelRules["providerModelRules"].([]any), map[string]any{"providerId": providerID, "modelId": model.ID, "config": modelConfig})
 			}
-			modelRules["providerModelRules"] = append(modelRules["providerModelRules"].([]any), map[string]any{"providerId": providerID, "modelId": model.ID, "config": modelConfig})
-		}
-		providers["providerRules"] = append(providers["providerRules"].([]any), map[string]any{
-			"providerId": providerID, "providerName": providerName, "enabled": true,
-			"config": map[string]any{"group": "standard-personal", "access": map[string]any{"type": "api-key", "apiKey": a.apiKey}, "api": map[string]any{"type": "anthropic-messages", "baseUrl": a.gatewayURL(port)}, "personalModelIds": ids, "modelOrder": ids},
-		})
-		if len(selection) == 0 || selection["providerId"] == providerID {
-			selected := models[0].ID
-			for _, id := range ids {
-				if selection["modelId"] == id {
-					selected = id
-					break
+			providers["providerRules"] = append(providers["providerRules"].([]any), map[string]any{
+				"providerId": providerID, "providerName": providerName, "enabled": true,
+				"config": map[string]any{"group": "standard-personal", "access": map[string]any{"type": "api-key", "apiKey": a.apiKey}, "api": map[string]any{"type": "anthropic-messages", "baseUrl": a.gatewayURL(port)}, "personalModelIds": ids, "modelOrder": ids},
+			})
+			if len(selection) == 0 || selection["providerId"] == providerID {
+				selected := models[0].ID
+				for _, id := range ids {
+					if selection["modelId"] == id {
+						selected = id
+						break
+					}
+				}
+				config["defaultModelSelection"] = map[string]any{"providerId": providerID, "modelId": selected}
+				if isAllowedZCodeModel(selected) {
+					chosenLevel := "high"
+					if opts, ok := selection["options"].(map[string]any); ok {
+						if cur, ok := opts["reasoningLevel"].(string); ok && (cur == "low" || cur == "medium" || cur == "high") {
+							chosenLevel = cur
+						}
+					}
+					config["defaultModelSelection"].(map[string]any)["options"] = map[string]any{"reasoningLevel": chosenLevel}
 				}
 			}
-			config["defaultModelSelection"] = map[string]any{"providerId": providerID, "modelId": selected}
-			if isAllowedZCodeModel(selected) {
-				config["defaultModelSelection"].(map[string]any)["options"] = map[string]any{"reasoningLevel": "enabled"}
-			}
-		}
 	} else {
 		if selection["providerId"] == providerID {
 			delete(config, "defaultModelSelection")

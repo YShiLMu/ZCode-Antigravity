@@ -37,9 +37,8 @@ same 3.8/3.7 defaults and never fail the sync. Each clean model ID maps to its e
 High entry. No older model is renamed to impersonate a newer version.
 
 Default context: 384K = 393,216 tokens, capped by a smaller declared upstream input limit.
-Default reasoning: High. Current ZCode's enabled switch explicitly requests adaptive thinking
-with output_config.effort="high". Disabled requests disabled thinking. Older ZCode clients
-retain Low/Medium/High choices with High as the default.
+Default reasoning: High. ZCode's model option selector provides Low, Medium, and High reasoning
+choices mapped directly to upstream thinking effort, with High as the default.
 
 Sync writes both config.json and provider_config.json, backs up existing files before writing,
 and preserves unrelated providers and defaults. Exit ZCode before a configuration change.

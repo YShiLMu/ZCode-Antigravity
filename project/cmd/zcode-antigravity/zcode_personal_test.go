@@ -35,9 +35,9 @@ func TestPersonalProviderMigratesBothSchemas(t *testing.T) {
 	}
 	config := root["config"].(map[string]any)
 	selection := config["defaultModelSelection"].(map[string]any)
-	if selection["modelId"] != "gemini-3.8-flash" || selection["options"].(map[string]any)["reasoningLevel"] != "enabled" {
-		t.Fatalf("wrong default: %v", selection)
-	}
+		if selection["modelId"] != "gemini-3.8-flash" || selection["options"].(map[string]any)["reasoningLevel"] != "high" {
+			t.Fatalf("wrong default: %v", selection)
+		}
 	rules := config["modelConfigRules"].(map[string]any)
 	models := rules["providerModelRules"].([]any)
 	if len(models) != 3 || len(rules["manualProviderModelRules"].([]any)) != 0 {
@@ -56,10 +56,10 @@ func TestPersonalProviderMigratesBothSchemas(t *testing.T) {
 		if fmt.Sprint(cfg["properties"].(map[string]any)["contextWindow"]) != "393216" {
 			t.Fatal("384K context not applied")
 		}
-		option := cfg["optionSpecs"].(map[string]any)["reasoningLevel"].(map[string]any)
-		if fmt.Sprint(option["values"]) != "[disabled enabled]" || option["map"] != geminiHighReasoningMap {
-			t.Fatalf("on/off mapping missing: %v", option)
-		}
+			option := cfg["optionSpecs"].(map[string]any)["reasoningLevel"].(map[string]any)
+			if fmt.Sprint(option["values"]) != "[low medium high]" || option["map"] != geminiReasoningMap {
+				t.Fatalf("3-level reasoning mapping missing: %v", option)
+			}
 	}
 	a.zcodeRunning = func() bool { return true }
 	if backup, changed, err := a.configureZCode(18080, requiredTestModels()); err != nil || changed || backup != "" {
